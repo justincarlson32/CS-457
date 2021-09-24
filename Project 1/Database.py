@@ -4,6 +4,11 @@ import os
 
 inUseDatabase = ''
 
+
+# function: doesExist(mode, path):
+# Purpose: Checks if a file/folder exists, with a mode flag that determines whether to look
+# for a folder or a file
+
 def doesExist(mode, path):
 	if (mode == 0): #databases
 		if (os.path.isdir(os.path.abspath(path))):
@@ -13,6 +18,10 @@ def doesExist(mode, path):
 			return True
 
 	return False
+
+
+# function: getKeyValuePairsFromFile(tblName):
+# Purpose: retrieves the values of a database from a text file
 
 def getKeyValuePairsFromFile(tblName):
 	pairs = []
@@ -24,6 +33,9 @@ def getKeyValuePairsFromFile(tblName):
 	f.close()	
 	return pairs	
 
+# function: getValuePairs(line)
+# Purpose: gets values from an command input
+
 def getKeyValuePairs(line):
 	keyValues = []
 
@@ -32,6 +44,9 @@ def getKeyValuePairs(line):
 	keyValues.append([(line[2]), (line[3])[:-2]])
 	
 	return keyValues
+
+#function: handleCreate(line)
+#purpose: handles the CREATE sql command and parsing
 
 def handleCreate(line):
 	structure = line[1]
@@ -52,7 +67,9 @@ def handleCreate(line):
 			f.close()
 		else:
 			print ("Failed Creating table: " + tblName + " because it already exists in database: "  + inUseDatabase)
-			
+
+#function: handleDrop(line)
+#purpose: handles the Drop sql command and parsing			
 
 def handleDrop(line):
 	if (line[1] == 'DATABASE'):
@@ -70,6 +87,9 @@ def handleDrop(line):
 		else:
 			print("Table deletion failed because table: " + tblName + " does not exist in database: " + inUseDatabase)
 
+#function: handleUse(line)
+#purpose: handles the USE sql command and parsing
+
 def handleUse(line):
 	dbName = (line[1])[:-1]
 	if (doesExist(0, dbName)):
@@ -78,6 +98,10 @@ def handleUse(line):
 		inUseDatabase = str(dbName)
 	else:
 		print("Database USE failed because database: " + dbName + " does not exist")
+
+
+#function: handleSelect(line)
+#purpose: handles the SELECT sql command and parsing
 
 def handleSelect(line):
 	tblName = (line[3])[:-1]
@@ -96,7 +120,8 @@ def handleSelect(line):
 	else:
 		print("Error selecting: " + tblName + " does not exist in database: " + inUseDatabase)
 
-#ALTER TABLE tbl_1 ADD a3 float;
+#function: handleAlter(line)
+#purpose: handles the ALTER sql command and parsing
 
 def handleAlter(line):
 	tblName = line[2]
@@ -128,6 +153,9 @@ def handleAlter(line):
 		print("Error altering: " + tblName + " does not exist in database: " + inUseDatabase)
 	print
 
+#function: parseLine(line)
+#purpose: handles command input parsing to determine which command is called
+	
 def parseLine(line):
 		command = line.split()[0]
 		if (command == 'CREATE'):
