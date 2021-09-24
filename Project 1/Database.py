@@ -1,3 +1,8 @@
+# Justin Carlson
+# CS 457-1001
+# Created: 09-23-21
+
+
 from genericpath import isfile
 import sys
 import os
