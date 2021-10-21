@@ -68,7 +68,7 @@ def handleCreate(line):
 			print("Creating table: " + tblName + " in database: " + inUseDatabase)
 			f = open(inUseDatabase + "/" + tblName, "w")
 			for keyValue in getKeyValuePairs(line[+3:]):
-				f.write(keyValue[0] + ' ' + keyValue[1] + '\n')
+				f.write(keyValue[0] + ' ' + keyValue[1] + ' ')
 			f.close()
 		else:
 			print ("Failed Creating table: " + tblName + " because it already exists in database: "  + inUseDatabase)
@@ -113,13 +113,11 @@ def handleSelect(line):
 	if (doesExist(1, inUseDatabase + "/" + tblName)):
 		if (line[1] == '*'): #select all; built for future element finding
 			f = open(inUseDatabase + "/" + tblName, "r")
-			lines = f.readlines()
+			types = f.readlines()
+			types = types[0].split(" ")[:-1]
 			printString = ''
-			for line in lines:
-				if (lines.index(line) == (lines.__len__() - 1)):
-					printString += line.rstrip()
-				else:
-					printString += line.rstrip() + " | "
+			for i in range(0, len(types), 2):
+				printString += types[i] + " " + types[i+1] + " | "
 			f.close()		
 			print(printString)
 	else:
@@ -132,7 +130,7 @@ def handleAlter(line):
 	tblName = line[2]
 	command = line[3]
 	if (doesExist(1, inUseDatabase + "/" + tblName)):
-		data = line[4] + " " +(line[5])[:-1]
+		data = line[4] + " " + (line[5])[:-1] + " "
 		if (command == 'DROP'):
 			pairs = getKeyValuePairsFromFile(tblName)
 			didFind = False
@@ -144,15 +142,15 @@ def handleAlter(line):
 					os.remove(os.path.abspath(inUseDatabase + "/" + tblName))
 					f = open(inUseDatabase + "/" + tblName, "w")
 					for pair in pairs:
-						f.write(pair[0] + ' ' + pair[1] + '\n')
+						f.write(pair[0] + ' ' + pair[1] + ' ')
 					f.close()
 
 			if (didFind == False):
 				print("Did not find: " + data + " in table: " + tblName)
 		if (command == 'ADD'):
-			print("Finished adding: " + data + "to table: " + tblName)
+			print("Finished adding: " + data + " to table: " + tblName)
 			f = open(inUseDatabase + "/" + tblName, "a")
-			f.write(data + '\n')
+			f.write(data)
 			f.close()
 	else:
 		print("Error altering: " + tblName + " does not exist in database: " + inUseDatabase)
