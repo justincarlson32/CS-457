@@ -8,7 +8,7 @@ import sys
 import os
 
 inUseDatabase = ''
-Process = 1
+inTransaction = 1
 inUseTables = {}
 
 # function: doesExist(mode, path):
@@ -331,13 +331,23 @@ def handleUpdate(line):
 	for row in modifiedRows:
 		table[int(row)][toColumn] = setValue # writing value back to original virtual table
 
-	global inUseTables
-	if (tblName in inUseTables.keys()):
-		print("Table: " + tblName + " is locked")
-		print("Abort Transaction")
-		return
+	if (doesExist(1, inUseDatabase + "/" + tblName + "_lock")):
+		localModification = False
+		global inUseTables
+		if (tblName in inUseTables.keys()):
+			localModification = True
+		if (not(localModification)):
+			print("Table: " + tblName + " is locked")
+			return
+	else:
+		if (inTransaction == 1):
+			f = open(inUseDatabase + "/" + tblName + "_lock", "w")
+			f.close()
+		
 	inUseTables[tblName] = table
-	#writeTableToFile(table, tblName) # write virtual table to disk
+	
+	if (inTransaction == 0):
+		writeTableToFile(table, tblName) # write virtual table to disk
 
 	print("Modified " + str(len(modifiedRows)) + " records")
 
@@ -385,16 +395,30 @@ def handleDelete(line):
 
 	writeTableToFile(table, tblName) # write table back to file after modification
 
+#function: handleTransactionStart()
+#purpose: handles the begin transactions command
 def handleTransactionStart():
-	print("Transaction Begin on process: " + str(Process))
+	inTransaction = 1 # sets in transaction flag
 
+#function: handleCommit()
+#purpose: handles the commit command and processing
 def handleCommit():
-	if (Process == 1):
-		global inUseTables
-		writeTableToFile(inUseTables['flights'], "Flights")
-		print("Committed Transactions to " + "Flights")
+	global inUseTables
+	global inTransaction
+	if (len(inUseTables) == 0): # if there is no edited tables in the transaction queue abort and return
+		print("Abort Transaction")
+		inTransaction == 0 # end transaction state
+		return
+	if (inTransaction == 1): # if in transaction and edited tables in the transaction queue
+		for key in inUseTables.keys():
+			tblName = key 
+			writeTableToFile(inUseTables[tblName], tblName)
+			print("Committed Transactions to " + tblName)
+			inUseTables = []
+			os.remove(os.path.abspath(inUseDatabase + "/" + tblName + "_lock"))
+		inTransaction = 0	
 		inUseTables = []
-
+		
 
 
 #function: parseLine(line)
@@ -423,52 +447,20 @@ def parseLine(line):
 		if (command == 'commit;'):
 			handleCommit()
 
-with open('PA4_test.sql') as f:
-	lines = f.readlines()
-	for line in lines:
-		if (not(line[0] == '\n' or ( line[0] == '-'))):
+interactiveInput = ""
+print("Launching in Interactive mode enter any SQL including semi-colons to terminate\n")
 
-			if any(".exit" in s for s in line.split()): #quit program if .exit is called
-				print("-------Finished--------")
-				quit()
-			
-			completeLine = line
+while (interactiveInput != ".exit"):
+	interactiveInput = input()
+	sanitized = ""
+	for word in interactiveInput.split(" "):
+		if (word == "flights"):
+			sanitized += "Flights "
+		else:
+			sanitized += word + " "
+	parseLine(sanitized)
 
-			amountOfLines = 1
-			while completeLine.find(';') == -1: #this is to deal with the new multiline commands, goes until a semi colon is found
-				if (not(lines[lines.index(line) + amountOfLines][0] == '-')):
-					completeLine += str(lines[lines.index(line) + amountOfLines])
-					lines[lines.index(line) + amountOfLines] = '-' + ' ' + '\n'
-				amountOfLines += 1		
-
-
-
-			splitComplete = completeLine.split() #create list of words
-
-			for chunk in splitComplete: #this is to correct bad test script using a mix of lowercase and uppercase P in product
-				if "product" in chunk:	#in real SQL capitalization matters...
-					splitComplete[splitComplete.index(chunk)] = "Product"
-
-
-
-			if len(splitComplete) > 7: #apparently it will retain values from the previous command, this is to check if there are duplicate wording
-				#this is honestly some black magic, that I couldnt figure out how to fix. It works somehow
-				if splitComplete[0] == splitComplete[2]:
-					splitComplete.remove(splitComplete[0])
-					splitComplete.remove(splitComplete[0])
-
-			completeLine = " ".join(splitComplete)# join list of words back into a single string
-			parseLine(completeLine)
-		elif (line == "-- On P2:\n"):
-			Process = 2
-			print("-------------------------------------")
-			print("--------------Process 2--------------")
-		elif (line == "-- On P1:\n"):
-			Process = 1
-			print("-------------------------------------")
-			print("--------------Process 1--------------")
-	print("-------Finished--------")
-
+print("Finished")
 	
 
 
